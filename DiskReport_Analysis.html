@@ -1,0 +1,272 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disk Report Insights</title>
+<style>
+  :root, [data-theme="dark"] {
+    --bg:#0b1220; --card:#111827; --border:#1f2a3a; --text:#e5eef7; --muted:#8b9bb0;
+    --accent:#3b82f6; --critical:#ef4444; --warning:#f59e0b; --ok:#22c55e; --input:#0f172a;
+    --chip:#1e293b;
+  }
+  [data-theme="light"] {
+    --bg:#f3f6fb; --card:#ffffff; --border:#dbe3ef; --text:#0f172a; --muted:#64748b;
+    --accent:#2563eb; --critical:#dc2626; --warning:#d97706; --ok:#16a34a; --input:#f8fafc;
+    --chip:#eef2ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 48px;transition:background .2s,color .2s}
+  .container{max-width:1280px;margin:0 auto}
+  header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap}
+  header h1{font-size:26px;font-weight:700}
+  header p{color:var(--muted);font-size:13px;margin-top:5px}
+  .theme-btn{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+  .card.total::before{background:var(--accent)} .card.critical::before{background:var(--critical)}
+  .card.warning::before{background:var(--warning)} .card.ok::before{background:var(--ok)}
+  .card .label{font-size:11px;text-transform:uppercase;letter-spacing:.55px;color:var(--muted);margin-bottom:6px}
+  .card .value{font-size:28px;font-weight:700}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media (max-width:900px){.grid-2{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px}
+  .panel-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .panel-header h2{font-size:14px}
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+  .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase}
+  .field input,.field select{width:100%;background:var(--input);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 10px;font-size:13px}
+  .btn{border:none;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-secondary{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .table-wrap{overflow:auto;max-height:420px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:10px;background:var(--input);color:var(--muted);font-size:11px;text-transform:uppercase;position:sticky;top:0}
+  td{padding:9px 10px;border-top:1px solid var(--border);vertical-align:top}
+  tr:hover td{background:rgba(59,130,246,.06)}
+  tr.neg td{background:rgba(239,68,68,.08)}
+  tr.pos td{background:rgba(34,197,94,.08)}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
+  .status-critical{background:rgba(239,68,68,.15);color:#b91c1c;border:1px solid rgba(239,68,68,.25)}
+  .status-warning{background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.25)}
+  .status-ok{background:rgba(34,197,94,.15);color:#15803d;border:1px solid rgba(34,197,94,.25)}
+  [data-theme="dark"] .status-critical{color:#fca5a5}
+  [data-theme="dark"] .status-warning{color:#fcd34d}
+  [data-theme="dark"] .status-ok{color:#86efac}
+  .issues{max-width:240px;color:var(--muted);font-size:12px}
+  .note{color:var(--muted);font-size:12px;padding:0 14px 12px}
+  footer{margin-top:10px;text-align:center;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Disk Report Insights</h1>
+      <p>History analysis ֲ· Viewer v1.4.2 ֲ· Data range: 2026-09-09  ג†’  2026-09-10 ֲ· Generated: 2026-09-10 07:42:07</p>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Switch to Light</button>
+  </header>
+
+  <div class="cards">
+    <div class="card total"><div class="label">Visible Total</div><div class="value" id="cardTotal">19</div></div>
+    <div class="card critical"><div class="label">Critical</div><div class="value" id="cardCritical">19</div></div>
+    <div class="card warning"><div class="label">Warning</div><div class="value" id="cardWarning">0</div></div>
+    <div class="card ok"><div class="label">OK</div><div class="value" id="cardOk">0</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-header"><h2>Top Users (most runs)</h2></div>
+      <div class="table-wrap"><table><thead><tr><th>User Name</th><th>Runs</th></tr></thead><tbody><tr><td>1</td><td><strong>9</strong></td></tr>
+<tr><td>2</td><td><strong>3</strong></td></tr>
+<tr><td>3</td><td><strong>2</strong></td></tr>
+<tr><td>9</td><td><strong>2</strong></td></tr>
+<tr><td>c0475483</td><td><strong>1</strong></td></tr>
+<tr><td>b0738005</td><td><strong>1</strong></td></tr>
+<tr><td>c0803399</td><td><strong>1</strong></td></tr></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><h2>Fastest Filling (GB/day)</h2></div>
+      <div class="note">Negative = free space decreasing. Needs 2+ samples.</div>
+      <div class="table-wrap"><table><thead><tr><th>Comp #</th><th>Computer</th><th>Client</th><th>Samples</th><th>First Free</th><th>Last Free</th><th>Delta</th></tr></thead><tbody><tr class='neg'><td>9</td><td>M2182648-W10</td><td>9</td><td>17</td><td>23.24</td><td>20.11</td><td>-3.13 (-4.216/day)</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>Largest Free-Space Drop</h2></div>
+    <div class="table-wrap"><table><thead><tr><th>Comp #</th><th>Computer</th><th>Client</th><th>Samples</th><th>First Free</th><th>Last Free</th><th>Delta</th></tr></thead><tbody><tr class='neg'><td>9</td><td>M2182648-W10</td><td>9</td><td>17</td><td>23.24</td><td>20.11</td><td>-3.13 (-4.216/day)</td></tr>
+<tr class=''><td>218655</td><td>M2182655-W11</td><td>mitry amsis</td><td></td><td>8.5</td><td>8.5</td><td>0 (0/day)</td></tr>
+<tr class=''><td>2155899</td><td>M2155899-W10</td><td>hanna</td><td></td><td>7.61</td><td>7.61</td><td>0 (0/day)</td></tr></tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>Sudden Volume Changes (>= 5GB)</h2></div>
+    <div class="table-wrap"><table><thead><tr><th>Comp #</th><th>Computer</th><th>Direction</th><th>Free GB</th><th>Change</th><th>From</th><th>To</th></tr></thead><tbody><tr><td colspan='7'>No sudden changes detected (>= 5GB)</td></tr></tbody></table></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>All Records</h2>
+      <div style="color:var(--muted);font-size:12px">Showing <span id="shownCount">0</span></div>
+    </div>
+    <div class="filters">
+      <div class="field"><label>Status</label>
+        <select id="fStatus"><option value="">All</option><option>Critical</option><option>Warning</option><option>OK</option></select>
+      </div>
+      <div class="field"><label>Computer #</label>
+        <select id="fComp"><option value="">All</option><option value="1">1</option>
+<option value="2">2</option>
+<option value="2155899">2155899</option>
+<option value="2182648">2182648</option>
+<option value="218655">218655</option>
+<option value="9">9</option></select>
+      </div>
+      <div class="field"><label>Client</label>
+        <select id="fClient"><option value="">All</option><option value="1">1</option>
+<option value="11">11</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="9">9</option>
+<option value="esr">esr</option>
+<option value="hanna">hanna</option>
+<option value="mitry amsis">mitry amsis</option></select>
+      </div>
+      <div class="field"><label>User Name</label>
+        <select id="fUser"><option value="">All</option><option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="9">9</option>
+<option value="b0738005">b0738005</option>
+<option value="c0475483">c0475483</option>
+<option value="c0803399">c0803399</option></select>
+      </div>
+      <div class="field"><label>Computer Name</label>
+        <select id="fCName"><option value="">All</option><option value="M2155899-W10">M2155899-W10</option>
+<option value="M2182648-W10">M2182648-W10</option>
+<option value="M2182655-W11">M2182655-W11</option></select>
+      </div>
+      <div class="field"><label>From</label><input id="fFrom" type="date"></div>
+      <div class="field"><label>To</label><input id="fTo" type="date"></div>
+      <div class="field" style="display:flex;gap:8px;align-items:end">
+        <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
+        <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+      </div>
+    </div>
+    <div class="table-wrap" style="max-height:520px">
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th><th>Comp #</th><th>Client</th><th>User</th><th>Computer</th>
+            <th>Status</th><th>RAM</th><th>Duration</th><th>Issues</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <footer>Theme + data-driven filters ֲ· Viewer v1.4.2</footer>
+</div>
+
+<script>
+// Theme first (must work even if data fails)
+function toggleTheme(){
+  try {
+    const html = document.documentElement;
+    const cur = html.getAttribute('data-theme') || 'dark';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = next === 'dark' ? 'Switch to Light' : 'Switch to Dark';
+    try { localStorage.setItem('dr_theme', next); } catch(e) {}
+  } catch(e) { console.error(e); }
+}
+(function initTheme(){
+  try {
+    let saved = 'dark';
+    try { saved = localStorage.getItem('dr_theme') || 'dark'; } catch(e) {}
+    document.documentElement.setAttribute('data-theme', saved);
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = saved === 'dark' ? 'Switch to Light' : 'Switch to Dark';
+  } catch(e) { console.error(e); }
+})();
+
+// Data
+let DATA = [];
+try {
+  DATA = [{"ts":"9/9/2026 13:51","comp":"2182648","client":"esr","user":"c0475483","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"40.74","issues":"Drive C: - CRITICAL free space: 23.24 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/9/2026 13:55","comp":"2155899","client":"hanna","user":"b0738005","cname":"M2155899-W10","status":"Critical","ram":"7.78","dur":"64.81","issues":"Drive C: - CRITICAL free space: 7.61 GB (4%)"},{"ts":"9/9/2026 13:58","comp":"218655","client":"mitry amsis","user":"c0803399","cname":"M2182655-W11","status":"Critical","ram":"15.68","dur":"53.05","issues":"Drive C: - CRITICAL free space: 8.5 GB (4.8%)"},{"ts":"9/9/2026 14:24","comp":"1","client":"1","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"14.02","issues":"Drive C: - CRITICAL free space: 23.21 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/9/2026 14:35","comp":"1","client":"1","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"11.85","issues":"Drive C: - CRITICAL free space: 23.2 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/9/2026 14:36","comp":"1","client":"1","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"6.76","issues":"Drive C: - CRITICAL free space: 23.21 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/9/2026 14:38","comp":"1","client":"1","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"9.9","issues":"Drive C: - CRITICAL free space: 23.21 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/9/2026 14:41","comp":"1","client":"1","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"10.54","issues":"Drive C: - CRITICAL free space: 23.18 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/9/2026 14:41","comp":"1","client":"1","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"11.5","issues":"Drive C: - CRITICAL free space: 23.18 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/9/2026 14:41","comp":"1","client":"1","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"9.94","issues":"Drive C: - CRITICAL free space: 23.18 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/9/2026 14:42","comp":"2","client":"2","user":"2","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"10.96","issues":"Drive C: - CRITICAL free space: 23.18 GB (11.1%) ; Drive D: - CRITICAL free space: 4.24 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"9/10/2026 7:04","comp":"2","client":"2","user":"2","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"11.5","issues":"Drive C: - CRITICAL free space: 20.12 GB (9.6%) ; Drive D: - CRITICAL free space: 4.25 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"2026-09-10 07:27:08","comp":"1","client":"11","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"14.65","issues":"Drive C: - CRITICAL free space: 20.11 GB (9.6%) ; Drive D: - CRITICAL free space: 4.25 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"2026-09-10 07:32:51","comp":"1","client":"2","user":"2","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"12.95","issues":"Drive C: - CRITICAL free space: 20.11 GB (9.6%) ; Drive D: - CRITICAL free space: 4.25 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"2026-09-10 07:33:00","comp":"1","client":"3","user":"3","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"10.2","issues":"Drive C: - CRITICAL free space: 20.11 GB (9.6%) ; Drive D: - CRITICAL free space: 4.25 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"2026-09-10 07:33:09","comp":"1","client":"1","user":"1","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"11.03","issues":"Drive C: - CRITICAL free space: 20.11 GB (9.6%) ; Drive D: - CRITICAL free space: 4.25 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"2026-09-10 07:33:16","comp":"1","client":"3","user":"3","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"11.12","issues":"Drive C: - CRITICAL free space: 20.11 GB (9.6%) ; Drive D: - CRITICAL free space: 4.25 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"2026-09-10 07:35:05","comp":"9","client":"9","user":"9","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"13.71","issues":"Drive C: - CRITICAL free space: 20.12 GB (9.6%) ; Drive D: - CRITICAL free space: 4.25 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"},{"ts":"2026-09-10 07:40:07","comp":"9","client":"9","user":"9","cname":"M2182648-W10","status":"Critical","ram":"15.68","dur":"11.63","issues":"Drive C: - CRITICAL free space: 20.11 GB (9.6%) ; Drive D: - CRITICAL free space: 4.25 GB (15.5%) ; Drive E: - CRITICAL free space: 0.08 GB (15.2%)"}];
+  if (!Array.isArray(DATA)) { DATA = (DATA ? [DATA] : []); }
+  console.log('Records loaded:', DATA.length);
+} catch (e) {
+  console.error('Failed to parse DATA', e);
+  DATA = [];
+}
+
+function parseDate(ts){
+  if(!ts) return null;
+  const d = new Date(String(ts).replace(' ','T'));
+  return isNaN(d.getTime()) ? null : d;
+}
+function badgeClass(s){
+  if(s==='Critical') return 'status-critical';
+  if(s==='Warning') return 'status-warning';
+  return 'status-ok';
+}
+function applyFilters(){
+  const status=document.getElementById('fStatus').value;
+  const comp=document.getElementById('fComp').value;
+  const client=document.getElementById('fClient').value;
+  const user=document.getElementById('fUser').value;
+  const cname=document.getElementById('fCName').value;
+  const fromVal=document.getElementById('fFrom').value;
+  const toVal=document.getElementById('fTo').value;
+  const fromDate=fromVal?new Date(fromVal+'T00:00:00'):null;
+  const toDate=toVal?new Date(toVal+'T23:59:59'):null;
+
+  let critical=0,warning=0,ok=0; const rows=[];
+  DATA.forEach(r=>{
+    if(status && r.status!==status) return;
+    if(comp && r.comp!==comp) return;
+    if(client && r.client!==client) return;
+    if(user && r.user!==user) return;
+    if(cname && r.cname!==cname) return;
+    const d=parseDate(r.ts);
+    if(fromDate && d && d<fromDate) return;
+    if(toDate && d && d>toDate) return;
+    rows.push(r);
+    if(r.status==='Critical') critical++; else if(r.status==='Warning') warning++; else ok++;
+  });
+  rows.sort((a,b)=>String(b.ts||'').localeCompare(String(a.ts||'')));
+
+  document.getElementById('tbody').innerHTML = rows.map(r=>
+    <tr>
+      <td></td>
+      <td><strong></strong></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td><span class="badge "></span></td>
+      <td></td>
+      <td></td>
+      <td class="issues"></td>
+    </tr>).join('');
+
+  const total=rows.length;
+  document.getElementById('shownCount').textContent=total;
+  document.getElementById('cardTotal').textContent=total;
+  document.getElementById('cardCritical').textContent=critical;
+  document.getElementById('cardWarning').textContent=warning;
+  document.getElementById('cardOk').textContent=ok;
+}
+function resetFilters(){
+  ['fStatus','fComp','fClient','fUser','fCName','fFrom','fTo'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
+}
+['fStatus','fComp','fClient','fUser','fCName','fFrom','fTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+applyFilters();
+</script>
+</body>
+</html>
