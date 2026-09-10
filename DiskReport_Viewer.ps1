@@ -1,15 +1,18 @@
 # ============================================================
-# DiskReport_Viewer.ps1 - Version 1.5.0
+# DiskReport_Viewer.ps1 - Version 1.5.1
 # Fixed HTML/JS, theme, critical queue by free vs 4x RAM
 # ============================================================
 
 $ErrorActionPreference = "Stop"
-$Version = "1.5.0"
+$Version = "1.5.1"
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-if (-not $ScriptDir) { $ScriptDir = (Get-Location).Path }
+if ($PSScriptRoot) { $ScriptDir = $PSScriptRoot }
+else {
+    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+    if (-not $ScriptDir) { $ScriptDir = (Get-Location).Path }
+}
 $HistoryPath = Join-Path $ScriptDir "DiskReports_History.csv"
 $OutHtml = Join-Path $ScriptDir "DiskReport_Analysis.html"
 
@@ -468,10 +471,29 @@ footer{margin-top:10px;text-align:center;color:var(--muted);font-size:12px}
 "@
 
 $Html | Out-File -FilePath $OutHtml -Encoding utf8
-Start-Process $OutHtml
+
+$opened = $false
+try {
+    Invoke-Item -LiteralPath $OutHtml -ErrorAction Stop
+    $opened = $true
+} catch {
+    try {
+        $localHtml = Join-Path $env:TEMP "DiskReport_Analysis.html"
+        Copy-Item -LiteralPath $OutHtml -Destination $localHtml -Force
+        Invoke-Item -LiteralPath $localHtml
+        $opened = $true
+        $OutHtml = $localHtml
+    } catch {
+        Write-Host "Could not open browser automatically." -ForegroundColor Yellow
+        Write-Host "Open this file manually:" -ForegroundColor Yellow
+        Write-Host "  $OutHtml" -ForegroundColor Cyan
+    }
+}
 
 Write-Host ""
-Write-Host "Dashboard opened." -ForegroundColor Green
+if ($opened) {
+    Write-Host "Dashboard opened." -ForegroundColor Green
+}
 Write-Host "File: $OutHtml" -ForegroundColor Cyan
 Write-Host "Version: $Version | Date range: $DateRangeText" -ForegroundColor DarkGray
 Write-Host "Treatment queue size: $QueueCount" -ForegroundColor DarkGray
